@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'services/user_service.dart';
 
 // Base URL for the Express backend (use 10.0.2.2 for Android emulator)
-const String baseUrl = 'http://10.0.2.2:3000/api';
+const String baseUrl = 'http://192.168.100.128:3000/api';
 // Base URL for the Express backend when running on a website or local browser
 const String websiteBaseUrl = 'http://localhost:3000/api';
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+  final String email;
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -20,15 +22,56 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  void _resetPassword() {
+  void _resetPassword() async {
     if (_formKey.currentState!.validate()) {
-      // UI only: show success message and pop back to login
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password Reset Successfully!')),
+      final userService = UserService();
+      final result = await userService.resetPassword(
+        email: widget.email,
+        newPassword: _newPasswordController.text,
       );
-      // Navigate back to the login screen
+      if (result['success']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Password Reset Successfully!')),
+      );
       Navigator.of(context).popUntil((route) => route.isFirst);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Failed to reset password')),
+        );
+      }
     }
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required bool isObscured,
+    required VoidCallback toggleObscure,
+    FormFieldValidator<String>? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isObscured,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: label,
+        hintStyle: const TextStyle(color: Colors.white54),
+        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+        suffixIcon: IconButton(
+          icon: Icon(isObscured ? Icons.visibility : Icons.visibility_off, color: Colors.white54),
+          onPressed: toggleObscure,
+        ),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Colors.white54),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFF7FA6C9)),
+        ),
+      ),
+      validator: validator,
+    );
   }
 
   @override
@@ -68,51 +111,29 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   const SizedBox(height: 32),
                   
                   // New Password field
-                  TextFormField(
+                  _buildPasswordField(
                     controller: _newPasswordController,
-                    obscureText: _obscurePassword,
-                    style: const TextStyle(color: Colors.white),
+                    label: 'New Password',
+                    isObscured: _obscurePassword,
+                    toggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a new password';
                       }
                       if (value.length < 6) {
-                        return 'Password must be at least 6 characters long';
+                        return 'Password must be at least 6 characters';
                       }
                       return null;
                     },
-                    decoration: InputDecoration(
-                      hintText: 'New Password',
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.white54,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Colors.white54),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0xFF7FA6C9)),
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 18),
                   
                   // Confirm Password field
-                  TextFormField(
+                  _buildPasswordField(
                     controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmPassword,
-                    style: const TextStyle(color: Colors.white),
+                    label: 'Confirm New Password',
+                    isObscured: _obscureConfirmPassword,
+                    toggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please confirm your new password';
@@ -122,30 +143,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       }
                       return null;
                     },
-                    decoration: InputDecoration(
-                      hintText: 'Confirm New Password',
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.white54,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Colors.white54),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0xFF7FA6C9)),
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 28),
                   

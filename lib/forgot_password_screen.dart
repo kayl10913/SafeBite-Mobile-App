@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'otp_screen.dart'; // We will create this next
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // Base URL for the Express backend (use 10.0.2.2 for Android emulator)
-const String baseUrl = 'http://10.0.2.2:3000/api';
+const String baseUrl = 'http://192.168.100.128:3000/api';
 // Base URL for the Express backend when running on a website or local browser
 const String websiteBaseUrl = 'http://localhost:3000/api';
 
@@ -26,13 +28,34 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _sendOtp() {
+  void _sendOtp() async {
     if (_formKey.currentState!.validate()) {
-      // UI only: Navigate to OTP screen
+      setState(() { _isLoading = true; });
+      try {
+        final response = await http.post(
+          Uri.parse('$baseUrl/forgot-password'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': _emailController.text}),
+        );
+        final data = jsonDecode(response.body);
+        if (response.statusCode == 200 && data['success'] == true) {
+          // Success: Navigate to OTP screen
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => OTPScreen(email: _emailController.text)),
       );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(data['error'] ?? 'Failed to send OTP')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Network error: Please try again')),
+        );
+      } finally {
+        setState(() { _isLoading = false; });
+      }
     }
   }
 
@@ -137,8 +160,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: _sendOtp,
-                      child: const Text(
+                      onPressed: _isLoading ? null : _sendOtp,
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
                         'Send Verification Code',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SessionService {
-  static const String baseUrl = 'http://10.0.2.2:3000/api/session';
+  static const String baseUrl = 'http://192.168.100.128:3000/api/session';
   // Base URL for the Express backend when running on a website or local browser
   static const String websiteBaseUrl = 'http://localhost:3000/api/session';
 

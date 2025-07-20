@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AnalyticsService {
   // Base URL for the analytics endpoints
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String baseUrl = 'http://192.168.100.128:3000/api';
   // Base URL for the Express backend when running on a website or local browser
   static const String websiteBaseUrl = 'http://localhost:3000/api';
 
